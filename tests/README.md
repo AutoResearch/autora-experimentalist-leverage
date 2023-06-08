@@ -1,30 +1,36 @@
-# Tests
+# The Leverage Sampler
 
-## Seeding
+This sampler uses the statistical concept of leverage by refitting the provided models iteratively with the leave-one-out method. 
 
-Some testcases involve random numbers. In order to avoid the testcases from running correctly sometimes, and incorrectly other times, we seed all the relevant random number generators for those testcases. To accomplish this, add the following pytest fixture to the test file and include it as required in the test functions:
+---
+WARNING: 
+This sampler needs to fit each model you provide it n times, where n corresponds to the number of datapoints you have. 
+As such, the computational time and power needed to run this sampler increases exponentially with increasing number of models and datapoints.
 
-```python
-import random
-import pytest
-import torch
+---
 
-@pytest.fixture
-def seed():
-    """
-    Ensures that the results are the same each time the tests are run.
-    """
-    random.seed(180)  # required for models which use the python `random` module
-    torch.manual_seed(180)  # required for PyTorch models
-    return
+In each iteration, it computes the degree to which the currently removed datapoint has influence on the model. 
+If the model remains stable, the datapoint is deemed to have little influence on the model, and as such will have a low likelyhood of being selected for further investigation.
+In contrast, if the model changes, the datapoint is influential on the model, and has a higher likelihood of being selected for further investigation.
 
+Specifically, you provide the sampler with a model that has been trained on all of the data. On each iteration, the sampler fits a new model with all data aside from one datapoint. 
+Both models ($m$) then predict Y scores ($Y'$) from the original X variable and compute a mean squared error (MSE) for each X score ($i$):
 
-def test_foo(seed):
-    """ Test something. """
-    
-    # No need to use `seed` in the function body – adding it as an argument is sufficient
-    
-    ... # Run tests
-```
+$$
+MSE_{m,i} = \sum(Y'_{m,i} - Y_{i})^{2} 
+$$    
 
-The seed value should be consistent but not tuned to produce correct results. The integer `180` is used in many tests, inspired "180 George St., Providence, RI, USA", the office address for the Center for Computation and Visualization at Brown University, whose staff supported the development of the AutoRA package. Sensible alternatives are `42`, `31415926` and `2654435769`. See [https://en.wikipedia.org/wiki/Nothing-up-my-sleeve_number](https://en.wikipedia.org/wiki/Nothing-up-my-sleeve_number) for more inspiration.
+The sampler then computes a ratio of the MSE scores between the sampler model and the original model that you provided:
+
+$$
+{MSE_{Ratio}}_{m,i} = {MSE_{sampler}}_{m,i}/{MSE_{original}}_{m}
+$$
+As such, values above one indicates that the original model fit the data better than the sampler model when removing that datapoint ($i$).
+In contrast, values below one dindicates that the sampler model fit the data better than the original model when removing that datapoint ($i$).
+And a value of one indicates that both models fit the data equally. If you provide multiple models, it will then average across these models to result in an aggregate MSE score for each X score. In the future, it might be a good idea to incorporate multiple models in a more sophisticated way.
+
+Finally, the sampler then uses these aggregated ratios to select the next set of datapoints to explore in one of three ways, declared with the 'fit' parameter.
+    -'increase' will choose samples focused on X scores where the fits got better (i.e., the smallest MSE ratios)
+    -'decrease' will choose samples focused on X scores where the fits got worse (i.e., the largest MSE ratios)
+    -'both' will do both of the above, or in other words focus on X scores with the most extreme scores.
+
