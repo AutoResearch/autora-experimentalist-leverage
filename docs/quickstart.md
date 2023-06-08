@@ -13,5 +13,5 @@ pip install -U autora["experimentalist-sampler-leverage"]
 
 Check your installation by running:
 ```shell
-python -c "from autora.experimentalist.sampler.leverage import Example"
+python -c "from autora.experimentalist.sampler.leverage import leverage_sample"
 ```

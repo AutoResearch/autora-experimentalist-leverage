@@ -15,13 +15,9 @@ def leverage_sample(X: np.array, Y: np.array, models: list, fit = 'both', num_sa
     
     Specifically, you provide the sampler with a model that has been trained on all of the data. On each iteration, the sampler fits a new model with all data aside from one datapoint. 
     Both models then predict Y scores from the original X variable and compute a mean squared error (MSE) for each X score:
-    
-    [ADD THE EQUATION HERE]
-    
+
     If you provide multiple models, it will then average across these models to result in an aggregate MSE score for each X score. In the future, it might be a good idea to incorporate multiple models in a more sophisticated way.
     The sampler then computes a ratio of the MSE scores between the sampler model and the original model that you provided:
-    
-    [ADD THE EQUATION HERE]
     
     As such, values above one indicates that the original model fit the data better than the sampler model when removing that datapoint.
     In contrast, values below one dindicates that the sampler model fit the data better than the original model when removing that datapoint.
@@ -36,7 +32,9 @@ def leverage_sample(X: np.array, Y: np.array, models: list, fit = 'both', num_sa
     Args:
         X: pool of IV conditions to evaluate leverage
         Y: pool of DV conditions to evaluate leverage
-        models: List of Scikit-learn (regression or classification) model(s) to compare
+        models: List of lists of Scikit-learn (regression or classification) model(s) to compare
+            -Each component of this list must be a list itself where the first object is a trained model and the second object is the model function itself
+                -For example: [my_DARTS_model, DartsRegressor()]
             -can be a single model, or a list of models. 
         num_samples: number of samples to select
         fit: method to evaluate leverage. Options:
@@ -54,11 +52,13 @@ def leverage_sample(X: np.array, Y: np.array, models: list, fit = 'both', num_sa
     
     #Determine the leverage
     leverage_mse = np.zeros((len(models), X.shape[0]))
-    for mi, model in enumerate(models):
+    for mi, model_theorist in enumerate(models):
+        model = model_theorist[0]
+        theorist = model_theorist[1]
         original_mse = np.mean(np.power(model.predict(X)-Y,2))
         for xi, x in enumerate(X):
-            #Copy the current model, TODO: Is this necessary?
-            current_model = copy.deepcopy(model)
+            #Initiate the model
+            current_model = theorist
             
             #Remove a datapoint for each iteration
             current_X = X
