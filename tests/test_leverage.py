@@ -18,7 +18,7 @@ def test_output_dimensions():
 
     #Sampler
     
-    X_new = leverage_sample(X, y, [[lr_theorist,LogisticRegression()], [darts_theorist,DARTSRegressor()]], fit = 'both', num_samples = n)
+    X_new = leverage_sample(X, y, [lr_theorist, darts_theorist], fit = 'both', num_samples = n)
 
     # Check that the sampler returns n experiment conditions
     assert X_new.shape == (n, X.shape[1])

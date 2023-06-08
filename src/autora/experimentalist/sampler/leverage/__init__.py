@@ -33,6 +33,20 @@ Finally, the sampler then uses these aggregated ratios to select the next set of
     -'increase' will choose samples focused on X scores where the fits got better (i.e., the smallest MSE ratios)
     -'decrease' will choose samples focused on X scores where the fits got worse (i.e., the largest MSE ratios)
     -'both' will do both of the above, or in other words focus on X scores with the most extreme scores.
+    
+    Args:
+        X: pool of IV conditions to evaluate leverage
+        Y: pool of DV conditions to evaluate leverage
+        models: List of Scikit-learn (regression or classification) model(s) to compare
+            -can be a single model, or a list of models. 
+        num_samples: number of samples to select
+        fit: method to evaluate leverage. Options:
+            -both: This will choose samples that caused the most change in the model, regardless of whether it got better or worse
+            -increase: This will choose samples focused on iterations where the fits got better 
+            -decrease: This will choose samples focused on iterations where the fits got worse 
+
+    Returns:
+        Sampled pool of experimental conditions
 
     """
     #Force data into required formats
@@ -41,13 +55,11 @@ Finally, the sampler then uses these aggregated ratios to select the next set of
     
     #Determine the leverage
     leverage_mse = np.zeros((len(models), X.shape[0]))
-    for mi, model_theorist in enumerate(models):
-        model = model_theorist[0]
-        theorist = model_theorist[1]
+    for mi, model in enumerate(models):
         original_mse = np.mean(np.power(model.predict(X)-Y,2))
         for xi, x in enumerate(X):
             #Initiate the model
-            current_model = theorist
+            current_model = copy.deepcopy(model)
             
             #Remove a datapoint for each iteration
             current_X = X
