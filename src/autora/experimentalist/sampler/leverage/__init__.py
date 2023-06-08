@@ -1,20 +1,43 @@
-"""
-Example Experimentalist Sampler
-"""
-
-
 import numpy as np
 import copy
 from typing import Optional
 
 def leverage_sampler(X: np.array, Y: np.array, models: List, fit = 'both', num_samples: int = 5):
     """
-    Add a description of the sampler here.
+    
+    WARNING: This sampler needs to fit each model you provide it n times, where n corresponds to the number of datapoints you have. 
+    As such, the computational time and power needed to run this sampler increases exponentially with increasing number of models and datapoints.
+    
+    This sampler uses the statistical concept of leverage by refitting the provided models iteratively with the leave-one-out method. 
+    In each iteration, it computes the degree to which the currently removed datapoint has influence on the model. 
+    If the model remains stable, the datapoint is deemed to have little influence on the model, and as such will have a low likelyhood of being selected for further investigation.
+    In contrast, if the model changes, the datapoint is influential on the model, and has a higher likelihood of being selected for further investigation.
+    
+    Specifically, you provide the sampler with a model that has been trained on all of the data. On each iteration, the sampler fits a new model with all data aside from one datapoint. 
+    Both models then predict Y scores from the original X variable and compute a mean squared error (MSE) for each X score:
+    
+    [ADD THE EQUATION HERE]
+    
+    If you provide multiple models, it will then average across these models to result in an aggregate MSE score for each X score. In the future, it might be a good idea to incorporate multiple models in a more sophisticated way.
+    The sampler then computes a ratio of the MSE scores between the sampler model and the original model that you provided:
+    
+    [ADD THE EQUATION HERE]
+    
+    As such, values above one indicates that the original model fit the data better than the sampler model when removing that datapoint.
+    In contrast, values below one dindicates that the sampler model fit the data better than the original model when removing that datapoint.
+    And a value of one indicates that both models fit the data equally.
+    
+    Finally, the sampler then uses these ratios to select the next set of datapoints to explore in one of three ways, declared with the 'fit' parameter.
+        -'increase' will choose samples focused on X scores where the fits got better (i.e., the smallest MSE ratios)
+        -'decrease' will choose samples focused on X scores where the fits got worse (i.e., the largest MSE ratios)
+        -'both' will do both of the above, or in other words focus on X scores with the most extreme scores.
+    
     
     Args:
         X: pool of IV conditions to evaluate leverage
         Y: pool of DV conditions to evaluate leverage
-        models: List of Scikit-learn (regression or classification) models to compare
+        models: List of Scikit-learn (regression or classification) model(s) to compare
+            -can be a single model, or a list of models. 
         num_samples: number of samples to select
         fit: method to evaluate leverage. Options:
             -both: This will choose samples that caused the most change in the model, regardless of whether it got better or worse
@@ -29,7 +52,7 @@ def leverage_sampler(X: np.array, Y: np.array, models: List, fit = 'both', num_s
     if isinstance(X, Iterable):
         X = np.array(list(X))
 
-    if isinstance(models, list):
+    if not isinstance(models, list):
         models = list(models)
     
     #Determine the leverage
@@ -49,7 +72,7 @@ def leverage_sampler(X: np.array, Y: np.array, models: List, fit = 'both', num_s
             #Refit the model with the truncated (n-1) data
             current_model.fit(current_X, current_Y.ravel())
             
-            #Determine current models prediction of original data
+            #Determine current models mean squared error from original data
             current_mse = np.mean(np.power(current_model.predict(X)-Y,2))
 
             #Determine the change of fit between original and truncated model
