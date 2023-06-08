@@ -1,113 +1,36 @@
-# AutoRA Template
+# The Leverage Sampler
 
-## Quickstart Guide
+This sampler uses the statistical concept of leverage by refitting the provided models iteratively with the leave-one-out method. 
 
-### Create GitHub Repository
+---
+WARNING: 
+This sampler needs to fit each model you provide it n times, where n corresponds to the number of datapoints you have. 
+As such, the computational time and power needed to run this sampler increases exponentially with increasing number of models and datapoints.
 
-You should create a GitHub repository from the root folder of this project:
-- Create a new repository on GitHub (a sensible name for the repository would be autora-experimentalist-sampler-leverage)
-- Follow the guide under `…or push an existing repository from the command line
-` 
+---
 
-### Virtual Environment 
-Install this in an environment using your chosen package manager. In this example we are using virtualenv
+In each iteration, it computes the degree to which the currently removed datapoint has influence on the model. 
+If the model remains stable, the datapoint is deemed to have little influence on the model, and as such will have a low likelyhood of being selected for further investigation.
+In contrast, if the model changes, the datapoint is influential on the model, and has a higher likelihood of being selected for further investigation.
 
-Install:
-- python (3.8 or greater): https://www.python.org/downloads/
-- virtualenv: https://virtualenv.pypa.io/en/latest/installation.html
+Specifically, you provide the sampler with a model that has been trained on all of the data. On each iteration, the sampler fits a new model with all data aside from one datapoint. 
+Both models ($m$) then predict Y scores ($Y'$) from the original X variable and compute a mean squared error (MSE) for each X score ($i$):
 
-Create a new virtual environment:
-```shell
-virtualenv venv
-```
-*Note: You want to ensure that the python version matches that of autora. If necessary 
-you can specify the respective python version directly, e.g., ``virtualenv venv --python=python3.9``*
+$$
+MSE_{m,i} = \sum(Y'_{m,i} - Y_{i})^{2} 
+$$    
 
-Activate it:
-```shell
-source venv/bin/activate
-```
+The sampler then computes a ratio of the MSE scores between the sampler model and the original model that you provided:
 
-### Install Dev Dependencies
+$$
+{MSE_{Ratio}}_{m,i} = {MSE_{sampler}}_{m,i}/{MSE_{original}}_{m}
+$$
+As such, values above one indicates that the original model fit the data better than the sampler model when removing that datapoint ($i$).
+In contrast, values below one dindicates that the sampler model fit the data better than the original model when removing that datapoint ($i$).
+And a value of one indicates that both models fit the data equally. If you provide multiple models, it will then average across these models to result in an aggregate MSE score for each X score. In the future, it might be a good idea to incorporate multiple models in a more sophisticated way.
 
-Use `pip install` to install the current project (`"."`) in editable mode (`-e`) with dev-dependencies (`[dev]`):
-```shell
-pip install -e ".[dev]"
-```
+Finally, the sampler then uses these aggregated ratios to select the next set of datapoints to explore in one of three ways, declared with the 'fit' parameter.
+    -'increase' will choose samples focused on X scores where the fits got better (i.e., the smallest MSE ratios)
+    -'decrease' will choose samples focused on X scores where the fits got worse (i.e., the largest MSE ratios)
+    -'both' will do both of the above, or in other words focus on X scores with the most extreme scores.
 
-*Note: You may install new dependencies via ``pip install packagename`` inside your virtual environment. If those
-dependencies are vital to your package, you will have to add them to the ``pyproject.toml`` (see Step 6 of the 
-Contribution Guide).*
-
-## Contribution Guide
-
-### Experimentalist Sampler [default]
-A method that identifies novel experiment conditions $X'$ that yield scientific merit.
-*Sampler* select from an existing pool of experiment conditions $X$).<br>
-*Example: The [Novelty Sampler](https://github.com/AutoResearch/autora-novelty-sampler) selects novel experiment 
-conditions $X'$ with respect to a pairwise distance metric applied to existing experiment conditions $X$.*
-### Step 1: Implement Your Code
-
-You may now add your code to `src/autora/experimentalist/sampler/leverage/__init__.py` file. You may 
-also add additional files in this folder. Just make sure to import the core function or class of your feature
-in the `__init__.py` if it is implemented elsewhere. 
-
-### Step 2 (Optional): Add Tests
-
-It is highly encouraged to add unit tests to ensure your code is working as intended. These can be [doctests](https://docs.python.org/3/library/doctest.html) or test cases in `tests/test_leverage.py`.
-
-*Note: Tests are required if you wish that your feature becomes part of the main 
-[autora](https://github.com/AutoResearch/autora) package. However, regardless of whether you choose to implement tests, 
-you will still be able to install your package separately, in addition to autora.* 
-
-### Step 3 (Optional): Add Documentation
-
-It is highly encouraged that you add documentation of your package in your `docs/index.md`. You can also add new pages 
-in the `docs` folder. Update the `mkdocs.yml` file to reflect structure of the documentation. For example, you can add 
-new pages or delete pages that you deleted from the `docs` folder.
-
-*Note: Documentation is required if you wish that your feature becomes part of the main 
-[autora](https://github.com/AutoResearch/autora) package. However, regardless of whether you choose to write
-documentation, you will still be able to install your package separately, in addition to autora.*
-
-### Step 4: Add Dependencies
-
-In pyproject.toml add the new dependencies under `dependencies`
-
-Install the added dependencies
-```shell
-pip install -e ".[dev]"
-```
-
-### Step 5: Publish Your Package
-
-Once your project is implemented, you may publish it as subpackage of AutoRA. If you have not thoroughly vetted your project or would otherwise like to refine it further, you may 
-nervous about the state of your package–you will be able to publish it as a pre-release, indicating to users that
-the package is still in progress.
-
-#### Step 5.1: Update Metadata
-
-To begin publishing your package, update the metadata under `project` in the pyproject.toml file to include 
-- name
-- description
-- author-name
-- author-email
-Also, update the URL for the repository under `project.urls`.
-
-#### Step 5.2 Publish via GitHub Actions
-
-To automate the publishing process for your package, you can use a GitHub action:
-- Add a github secret in your repository named PYPI_API_TOKEN, that contains a PyPI token of your account
-- Add the GitHub action to the `.github/workflows` directory: For example, you can use the default publishing action:
-  - Navigate to the `actions` on the GitHub website of your repository.
-  - Search for the `Publish Python Package` action and add it to your project
-- Create a new release: Click on `create new release` on the GitHub website of your repository.
-- Choose a tag (this is the version number of the release. If you didn't set up dynamic versioning it should match the version in the `pyproject.toml` file)
-- Generate release notes automatically by clicking `generate release`, which adds the markdown of the merged pull requests and the contributors.
-- If this is a pre-release check the box `set as pre-release`
-- Click on `publish release`
-## Questions & Help
-
-If you have any questions or require any help, please add your question in the 
-[Contributor Q&A of AutoRA Discussions](https://github.com/orgs/AutoResearch/discussions/categories/contributor-q-a).
-We look forward to hearing from you!
