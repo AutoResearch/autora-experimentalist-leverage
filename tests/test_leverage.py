@@ -1,6 +1,6 @@
-from autora.experimentalist.sampler.model_disagreement import model_disagreement_sampler
-from autora.theorist.bms import BMSRegressor; BMSRegressor()
+from autora.experimentalist.sampler.leverage import leverage_sample
 from autora.theorist.darts import DARTSRegressor; DARTSRegressor()
+from sklearn.linear_model import LogisticRegression
 import numpy as np
 
 def test_output_dimensions():
@@ -10,14 +10,15 @@ def test_output_dimensions():
     n = 5
     
     #Theorists
-    bms_theorist = BMSRegressor()
+    lr_theorist = LogisticRegression()
     darts_theorist = DARTSRegressor()
     
-    bms_theorist.fit(X,y)
+    lr_theorist.fit(X,y)
     darts_theorist.fit(X,y)
 
     #Sampler
-    X_new = model_disagreement_sampler(X, [bms_theorist, darts_theorist], n)
+    
+    X_new = leverage_sample(X, y, [[lr_theorist,LogisticRegression()], [darts_theorist,DARTSRegressor()]], fit = 'both', num_samples = n)
 
     # Check that the sampler returns n experiment conditions
     assert X_new.shape == (n, X.shape[1])
