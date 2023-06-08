@@ -1,6 +1,8 @@
 import numpy as np
 import copy
 from typing import Optional
+from autora.utils.deprecation import deprecated_alias
+
 
 def leverage_sample(X: np.array, Y: np.array, models: list, fit = 'both', num_samples: int = 5):
     """
@@ -92,3 +94,5 @@ def leverage_sample(X: np.array, Y: np.array, models: list, fit = 'both', num_sa
     new_conditions = X[new_conditions_index]
 
     return new_conditions[:num_samples]
+
+leverage_sampler = deprecated_alias(leverage_sample, "leverage_sampler")
