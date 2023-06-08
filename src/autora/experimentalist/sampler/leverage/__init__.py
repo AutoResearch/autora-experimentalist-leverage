@@ -2,7 +2,7 @@ import numpy as np
 import copy
 from typing import Optional
 
-def leverage_sampler(X: np.array, Y: np.array, models: List, fit = 'both', num_samples: int = 5):
+def leverage_sample(X: np.array, Y: np.array, models: list, fit = 'both', num_samples: int = 5):
     """
     
     WARNING: This sampler needs to fit each model you provide it n times, where n corresponds to the number of datapoints you have. 
@@ -49,9 +49,6 @@ def leverage_sampler(X: np.array, Y: np.array, models: List, fit = 'both', num_s
 
     """
     #Force data into required formats
-    if isinstance(X, Iterable):
-        X = np.array(list(X))
-
     if not isinstance(models, list):
         models = list(models)
     
