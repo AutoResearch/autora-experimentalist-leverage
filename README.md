@@ -34,3 +34,22 @@ Finally, the sampler then uses these aggregated ratios to select the next set of
     -'decrease' will choose samples focused on X scores where the fits got worse (i.e., the largest MSE ratios)
     -'both' will do both of the above, or in other words focus on X scores with the most extreme scores.
 
+```
+from autora.experimentalist.sampler.leverage import leverage_sample
+from autora.theorist.darts import DARTSRegressor; DARTSRegressor()
+from sklearn.linear_model import LogisticRegression
+
+#Meta-Setup
+X = np.linspace(start=-3, stop=6, num=10).reshape(-1, 1)
+y = (X**2).reshape(-1, 1)
+n = 5
+
+#Theorists
+darts_theorist = DARTSRegressor()
+lr_theorist = LogisticRegression()
+darts_theorist.fit(X,y)
+lr_theorist.fit(X,y)
+
+#Sampler
+X_new = leverage_sample(X, y, [darts_theorist, lr_theorist], fit = 'both', n_samples = n)
+```
