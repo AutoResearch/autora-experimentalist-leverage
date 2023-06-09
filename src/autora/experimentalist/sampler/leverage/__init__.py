@@ -2,7 +2,7 @@ import numpy as np
 import copy
 from typing import Optional
 
-def leverage_sample(X: np.array, Y: np.array, models: list, fit = 'both', num_samples: int = 5):
+def leverage_sample(X: np.array, Y: np.array, models: list, fit = 'both', num_samples: int = 5, sd = .1):
     """
     
 # The Leverage Sampler
@@ -90,6 +90,7 @@ Finally, the sampler then uses these aggregated ratios to select the next set of
     else:
         raise AttributeError("The fit parameter was not recognized. Accepted parameters include: 'both', 'increase', and 'decrease'.")
             
-    new_conditions = X[new_conditions_index]
+    noise = np.array([np.random.normal(0,sd) for r in range(len(new_conditions_index))])
+    new_conditions = X[new_conditions_index]+noise
 
     return new_conditions[:num_samples]
