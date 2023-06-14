@@ -1,6 +1,8 @@
 import numpy as np
 import copy
 from typing import Optional
+from autora.utils.deprecation import deprecated_alias
+
 
 def leverage_sample(X: np.array, Y: np.array, models: list, fit = 'both', num_samples: int = 5, sd = .1):
     """
@@ -94,3 +96,5 @@ Finally, the sampler then uses these aggregated ratios to select the next set of
     new_conditions = X[new_conditions_index]+noise
 
     return new_conditions[:num_samples]
+
+leverage_sampler = deprecated_alias(leverage_sample, "leverage_sampler")
