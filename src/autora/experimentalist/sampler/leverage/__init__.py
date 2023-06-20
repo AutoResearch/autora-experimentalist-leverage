@@ -1,8 +1,6 @@
 import numpy as np
 import copy
 from typing import Optional
-from autora.utils.deprecation import deprecated_alias
-
 
 def leverage_sample(X: np.array, Y: np.array, models: list, fit = 'both', num_samples: int = 5, sd = .1):
     """
@@ -41,11 +39,12 @@ Finally, the sampler then uses these aggregated ratios to select the next set of
         Y: pool of DV conditions to evaluate leverage
         models: List of Scikit-learn (regression or classification) model(s) to compare
             -can be a single model, or a list of models. 
-        num_samples: number of samples to select
         fit: method to evaluate leverage. Options:
             -both: This will choose samples that caused the most change in the model, regardless of whether it got better or worse
             -increase: This will choose samples focused on iterations where the fits got better 
             -decrease: This will choose samples focused on iterations where the fits got worse 
+        num_samples: number of samples to select
+        sd: A noise parameter around the selected samples to allow for the selection of datapoints that are not part of the original dataset. This is not currently constrained by the pipelines IV resolution.
 
     Returns:
         Sampled pool of experimental conditions
@@ -58,11 +57,10 @@ Finally, the sampler then uses these aggregated ratios to select the next set of
     #Determine the leverage
     leverage_mse = np.zeros((len(models), X.shape[0]))
     for mi, model in enumerate(models):
-        original_mse = np.mean(np.power(model.predict(X)-Y,2))
-        for xi, x in enumerate(X):
-            #Initiate the model
-            current_model = copy.deepcopy(model)
-            
+        current_model = copy.deepcopy(model)
+        current_model.fit(X, Y)
+        original_mse = np.mean(np.power(current_model.predict(X)-Y,2))
+        for xi, x in enumerate(X):            
             #Remove a datapoint for each iteration
             current_X = X
             current_X = np.delete(current_X,xi).reshape(-1,1)
@@ -70,7 +68,8 @@ Finally, the sampler then uses these aggregated ratios to select the next set of
             current_Y = np.delete(current_Y,xi).reshape(-1,1)
             
             #Refit the model with the truncated (n-1) data
-            current_model.fit(current_X, current_Y.ravel())
+            current_model = copy.deepcopy(model)
+            current_model.fit(current_X, current_Y)
             
             #Determine current models mean squared error from original data
             current_mse = np.mean(np.power(current_model.predict(X)-Y,2))
@@ -93,8 +92,6 @@ Finally, the sampler then uses these aggregated ratios to select the next set of
         raise AttributeError("The fit parameter was not recognized. Accepted parameters include: 'both', 'increase', and 'decrease'.")
             
     noise = np.array([np.random.normal(0,sd) for r in range(len(new_conditions_index))])
-    new_conditions = X[new_conditions_index]+noise
+    new_conditions = X[new_conditions_index].reshape(-1)+noise
 
     return new_conditions[:num_samples]
-
-leverage_sampler = deprecated_alias(leverage_sample, "leverage_sampler")
