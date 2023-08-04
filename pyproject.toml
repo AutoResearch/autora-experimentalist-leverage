@@ -1,12 +1,12 @@
 [project]
 # UPDATE THIS BEFORE PUBLISHING
-name = "leverage"
-description = "Experimentalist that uses a statistical leverage to determine the next data to sample."
+name = "autora-experimentalist-sampler-leverage"
+description = "Experimentalist that uses statistical leverage to determine the next data to sample."
 authors = [{ name = "Chad Williams", email = "chad_williams@brown.edu" }]
 dynamic = ["version"]
 
 readme = "README.md"
-license = { text = "MIT license" }
+license = { file = "LICENSE" }
 requires-python = ">=3.8,<4"
 
 # ADD NEW DEPENDENCIES HERE
@@ -22,7 +22,7 @@ dev = [
 
 [project.urls]
 homepage = "http://www.empiricalresearch.ai"
-repository = ""
+repository = "https://github.com/AutoResearch/autora-experimentalist-sampler-leverage"
 documentation = "https://autoresearch.github.io/autora/"
 
 
