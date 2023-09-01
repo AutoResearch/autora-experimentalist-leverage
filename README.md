@@ -1,4 +1,4 @@
-# The Leverage Sampler
+# The Leverage Experimentalist
 
 This sampler uses the statistical concept of leverage by refitting the provided models iteratively with the leave-one-out method. 
 
