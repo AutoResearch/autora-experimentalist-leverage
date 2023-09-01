@@ -7,11 +7,11 @@ You will need:
 *leverage is a part of the `autora` package:
 
 ```shell
-pip install -U autora["experimentalist-sampler-leverage"]
+pip install -U autora["experimentalist-leverage"]
 ```
 
 
 Check your installation by running:
 ```shell
-python -c "from autora.experimentalist.sampler.leverage import leverage_sample"
+python -c "from autora.experimentalist.leverage import leverage_sample"
 ```

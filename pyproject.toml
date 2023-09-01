@@ -1,6 +1,6 @@
 [project]
 # UPDATE THIS BEFORE PUBLISHING
-name = "autora-experimentalist-sampler-leverage"
+name = "autora-experimentalist-leverage"
 description = "Experimentalist that uses statistical leverage to determine the next data to sample."
 authors = [{ name = "Chad Williams", email = "chad_williams@brown.edu" }]
 dynamic = ["version"]
@@ -22,7 +22,7 @@ dev = [
 
 [project.urls]
 homepage = "http://www.empiricalresearch.ai"
-repository = "https://github.com/AutoResearch/autora-experimentalist-sampler-leverage"
+repository = "https://github.com/AutoResearch/autora-experimentalist-leverage"
 documentation = "https://autoresearch.github.io/autora/"
 
 
