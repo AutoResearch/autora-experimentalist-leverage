@@ -1,10 +1,18 @@
 import copy
+from typing import Optional, Union
 
 import numpy as np
+import pandas as pd
 
 
 def sample(
-    X: np.array, Y: np.array, models: list, fit="both", num_samples: int = 5, sd=0.1
+        conditions: Union[pd.DataFrame, np.ndarray],
+        Y: np.array,
+        models: list,
+        fit: str = "both",
+        num_samples: int = 5,
+        sd: float = 0.1,
+        random_state: Optional[int] = None,
 ):
     """
 
@@ -46,7 +54,7 @@ def sample(
         in an aggregate MSE score for each X score. In the future,
         it might be a good idea to incorporate multiple models in a more sophisticated way.
 
-    Finally, the experimentalsit then uses these aggregated ratios to select the next set of
+    Finally, the experimentalist then uses these aggregated ratios to select the next set of
     datapoints to explore in one of three ways, declared with the 'fit' parameter.
         -'increase' will choose samples focused on X scores where the fits got better
             (i.e., the smallest MSE ratios)
@@ -56,7 +64,7 @@ def sample(
             the most extreme scores.
 
         Args:
-            X: pool of IV conditions to evaluate leverage
+            conditions: pool of IV conditions to evaluate leverage
             Y: pool of DV conditions to evaluate leverage
             models: List of Scikit-learn (regression or classification) model(s) to compare
                 -can be a single model, or a list of models.
@@ -69,6 +77,7 @@ def sample(
             sd: A noise parameter around the selected samples to allow for the selection
                 of datapoints that are not part of the original dataset.
                 This is not currently constrained by the pipelines IV resolution.
+            random_state:
 
         Returns:
             Sampled pool of experimental conditions
@@ -77,6 +86,8 @@ def sample(
     # Force data into required formats
     if not isinstance(models, list):
         models = list(models)
+
+    X = np.array(conditions)
 
     # Determine the leverage
     leverage_mse = np.zeros((len(models), X.shape[0]))
@@ -107,7 +118,7 @@ def sample(
     leverage_mse = np.mean(leverage_mse, 0)  # Average across models
     if fit == "both":
         leverage_mse[leverage_mse < 1] = (
-            1 / leverage_mse[leverage_mse < 1]
+                1 / leverage_mse[leverage_mse < 1]
         )  # Transform numbers under 1 to parallel numbers over 1
         new_conditions_index = np.argsort(leverage_mse)[::-1]
     elif fit == "increase":
@@ -120,12 +131,16 @@ def sample(
             " 'both', 'increase', and 'decrease'."
         )
 
-    noise = np.array(
-        [np.random.normal(0, sd) for r in range(len(new_conditions_index))]
-    )
-    new_conditions = X[new_conditions_index].reshape(-1) + noise
+    rng = np.random.default_rng(random_state)
 
-    return new_conditions[:num_samples]
+    noise = np.array([rng.normal(0, sd) for r in range(len(new_conditions_index))])
+    new_conditions = X[new_conditions_index].reshape(-1) + noise
+    new_conditions = new_conditions[:num_samples]
+
+    if isinstance(conditions, pd.DataFrame):
+        new_conditions = pd.DataFrame(new_conditions, columns=conditions.columns)
+
+    return new_conditions
 
 
 leverage_sample = sample
