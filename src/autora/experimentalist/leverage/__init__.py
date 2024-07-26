@@ -6,13 +6,13 @@ import pandas as pd
 
 
 def sample(
-        conditions: Union[pd.DataFrame, np.ndarray],
-        Y: np.array,
-        models: list,
-        fit: str = "both",
-        num_samples: int = 5,
-        sd: float = 0.1,
-        random_state: Optional[int] = None,
+    conditions: Union[pd.DataFrame, np.ndarray],
+    Y: np.array,
+    models: list,
+    fit: str = "both",
+    num_samples: int = 5,
+    sd: float = 0.1,
+    random_state: Optional[int] = None,
 ):
     """
 
@@ -118,7 +118,7 @@ def sample(
     leverage_mse = np.mean(leverage_mse, 0)  # Average across models
     if fit == "both":
         leverage_mse[leverage_mse < 1] = (
-                1 / leverage_mse[leverage_mse < 1]
+            1 / leverage_mse[leverage_mse < 1]
         )  # Transform numbers under 1 to parallel numbers over 1
         new_conditions_index = np.argsort(leverage_mse)[::-1]
     elif fit == "increase":
@@ -139,6 +139,8 @@ def sample(
 
     if isinstance(conditions, pd.DataFrame):
         new_conditions = pd.DataFrame(new_conditions, columns=conditions.columns)
+    else:
+        new_conditions = pd.DataFrame(new_conditions)
 
     return new_conditions
 
